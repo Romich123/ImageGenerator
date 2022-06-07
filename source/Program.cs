@@ -10,6 +10,7 @@ namespace ImageGenerator
 
 		private static readonly ProgramSettings _settings = ProgramSettings.FromFile("settings.yml");
 		private static readonly Bitmap _targetImage = new(_settings.PathToTarget);
+		private static readonly byte[] _targetImageRgbValues = _targetImage.GetBytes();
 		private static readonly List<Bitmap> _patterns = new();
 		private static readonly Size ResultSize = _targetImage.Size;
 
@@ -55,6 +56,9 @@ namespace ImageGenerator
 
 				DrawMostRelevant(pretenders, drawBeforeIndex);
 
+				if (Directory.Exists("Results") == false)
+					Directory.CreateDirectory("Results");
+
 				_resultHandler.Save($"Results/iteration_{currentIteration}.png");
 			}
 
@@ -93,9 +97,7 @@ namespace ImageGenerator
 		//returns index first of first not relevant object
 		private static int OrderPretendersByRelevance(List<TransformableBitmap> pretenders)
 		{
-			bool flag = false;
-
-			TransformableBitmap firstBad = pretenders[pretenders.Count - 1];
+			TransformableBitmap firstBad = pretenders[^1];
 
 			int[] results = new int[pretenders.Count];
 
@@ -108,8 +110,8 @@ namespace ImageGenerator
 
 				x.DrawOnGraphic(graphic, _targetImage);
 
-				var beforePretender = CompareImages(_resultHandler, _targetImage, x.Bounds);
-				var afterPretender = CompareImages(resultClone, _targetImage, x.Bounds);
+				var beforePretender = CompareImages(_resultHandler.GetBytes(), _targetImageRgbValues, x.Bounds, ResultSize);
+				var afterPretender = CompareImages(resultClone.GetBytes(), _targetImageRgbValues, x.Bounds, ResultSize);
 
 				graphic.Dispose();
 				resultClone.Dispose();
@@ -142,6 +144,31 @@ namespace ImageGenerator
 					pretenders[i].DrawOnGraphic(_resultGraphicHandler, _targetImage);
 				}
 			}			
+		}
+
+		public static int CompareImages(byte[] rgbValues1, byte[] rgbValues2, Rectangle bounds, Size bitmapSize)
+		{
+			var startHorizontal = Math.Clamp(bounds.X, 0, bitmapSize.Width - 1);
+			var startVertical = Math.Clamp(bounds.Y, 0, bitmapSize.Height - 1);
+
+			var endHorizontal = Math.Clamp(bounds.X + bounds.Width, 0, bitmapSize.Width - 1);
+			var endVertical = Math.Clamp(bounds.Y + bounds.Height, 0, bitmapSize.Height - 1);
+
+			int difference = 0;
+
+			for (int ii = startVertical; ii < endVertical; ii++)
+			{
+				for (int i = startHorizontal; i < endHorizontal; i++)
+				{
+					int pixelIndex = ((ii * bitmapSize.Width) + i) * 4;
+
+					difference += Math.Abs(rgbValues1[pixelIndex] - rgbValues2[pixelIndex]) +
+								  Math.Abs(rgbValues1[pixelIndex + 1] - rgbValues2[pixelIndex + 1]) +
+								  Math.Abs(rgbValues1[pixelIndex + 2] - rgbValues2[pixelIndex + 2]);
+				}
+			}
+
+			return difference;
 		}
 
 		public static TransformableBitmap GetRandomTransformable(Bitmap bitmap)
@@ -179,49 +206,6 @@ namespace ImageGenerator
 			result.RotationAngle = Math.Clamp((float)(result.RotationAngle + (Random.NextSingle() - 0.5) * 2 * _settings.MaxRotationChange), _settings.MinRotation, _settings.MaxRotation);
 
 			return result;
-		}
-
-		public static int CompareImages(Bitmap bitmap1, Bitmap bitmap2, Rectangle bounds)
-		{
-			var bmpData1 = bitmap1.LockBits(new Rectangle(0, 0, bitmap1.Width, bitmap1.Height), ImageLockMode.ReadOnly, bitmap1.PixelFormat);
-
-			int bytes1 = Math.Abs(bmpData1.Stride) * bitmap1.Height;
-			byte[] rgbValues1 = new byte[bytes1];
-			Marshal.Copy(bmpData1.Scan0, rgbValues1, 0, bytes1);
-
-			var bmpData2 = bitmap2.LockBits(new Rectangle(0, 0, bitmap2.Width, bitmap2.Height), ImageLockMode.ReadOnly, bitmap1.PixelFormat);
-
-			int bytes2 = Math.Abs(bmpData2.Stride) * bitmap2.Height;
-			byte[] rgbValues2 = new byte[bytes2];
-			Marshal.Copy(bmpData2.Scan0, rgbValues2, 0, bytes2);
-
-			var startHorizontal = Math.Clamp(bounds.X, 0, bitmap1.Width - 1);
-			var startVertical = Math.Clamp(bounds.Y, 0, bitmap1.Height - 1);
-
-			var endHorizontal = Math.Clamp(bounds.X + bounds.Width, 0, bitmap1.Width - 1);
-			var endVertical = Math.Clamp(bounds.Y + bounds.Height, 0, bitmap1.Height - 1);
-
-			int difference = 0;
-
-			for (int ii = startVertical; ii < endVertical; ii++)
-			{
-				for (int i = startHorizontal; i < endHorizontal; i++)
-				{
-					int pixelIndex = ((ii * bitmap1.Width) + i) * 4;
-
-					difference += Math.Abs(rgbValues1[pixelIndex] - rgbValues2[pixelIndex]) +
-								  Math.Abs(rgbValues1[pixelIndex + 1] - rgbValues2[pixelIndex + 1]) +
-								  Math.Abs(rgbValues1[pixelIndex + 2] - rgbValues2[pixelIndex + 2]);
-				}
-			}
-
-			//Marshal.Copy(rgbValues1, 0, bmpData1.Scan0, bytes1);
-			bitmap1.UnlockBits(bmpData1);
-
-			//Marshal.Copy(rgbValues2, 0, bmpData2.Scan0, bytes2);
-			bitmap2.UnlockBits(bmpData2);
-
-			return difference;
 		}
 	}
 }
