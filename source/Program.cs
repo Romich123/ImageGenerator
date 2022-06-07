@@ -182,9 +182,9 @@ namespace ImageGenerator
 				scale.Y = scale.X;
 
 			var result = new TransformableBitmap(bitmap,
-												 origin,
-												 Random.NextSingle() * (_settings.MaxRotation - _settings.MinRotation) + _settings.MinRotation,
-												 scale);
+			                                     origin,
+			                                     Random.NextSingle() * (_settings.MaxRotation - _settings.MinRotation) + _settings.MinRotation,
+			                                     scale);
 
 			return result;
 		}
