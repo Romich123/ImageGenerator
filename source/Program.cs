@@ -146,7 +146,7 @@ namespace ImageGenerator
 			}			
 		}
 
-		public static int CompareImages(byte[] rgbValues1, byte[] rgbValues2, Rectangle bounds, Size bitmapSize)
+		public static int GetDifferenceBetweenImages(byte[] rgbValues1, byte[] rgbValues2, Rectangle bounds, Size bitmapSize)
 		{
 			var startHorizontal = Math.Clamp(bounds.X, 0, bitmapSize.Width - 1);
 			var startVertical = Math.Clamp(bounds.Y, 0, bitmapSize.Height - 1);
