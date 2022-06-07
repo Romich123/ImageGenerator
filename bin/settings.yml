@@ -1,0 +1,18 @@
+pathToTarget: Images/target.png
+pathToStart: Images/start.png
+
+pretendersInIteration: 100
+survivingRateInChange: 5
+changesPerIteration: 1
+iterationsCount: 10000
+
+sameScaleForBothAxis: true
+minScale: 0.05
+maxScale: 0.07
+
+minRotation: -720
+maxRotation: 720
+
+maxOriginChange: 40
+maxScaleChange: 0.05000000074505806
+maxRotationChange: 10
